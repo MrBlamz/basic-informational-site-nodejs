@@ -1,62 +1,58 @@
-import * as http from 'http';
-import * as fs from 'fs';
+import * as express from 'express';
 import * as path from 'path';
 
-http
-  .createServer((request, response) => {
-    console.log('request starting...');
+const app = express();
 
-    let filePath = '.' + request.url;
-    // Home page
-    if (filePath == './') filePath = './index.html';
-    console.log(`Requesting file: ${filePath}`);
+// Middleware
+app.use('/public', express.static(path.join(__dirname, 'public')));
 
-    const extname = path.extname(filePath);
-    let contentType = 'text/html';
+// File options
+const OPTIONS = {
+  root: path.join(__dirname, 'public'),
+  dotfiles: 'deny',
+  headers: {
+    'x-timestamp': Date.now(),
+    'x-sent': true,
+  },
+};
 
-    switch (extname) {
-      case '.js':
-        contentType = 'text/javascript';
-        break;
-      case '.css':
-        contentType = 'text/css';
-        break;
-      case '.json':
-        contentType = 'application/json';
-        break;
-      case '.png':
-        contentType = 'image/png';
-        break;
-      case '.jpg':
-        contentType = 'image/jpg';
-        break;
-      case '.wav':
-        contentType = 'audio/wav';
-        break;
-    }
+// Home page
+app.get('/', (req, res, next) => {
+  console.log('Request for Home page started!');
 
-    fs.readFile(filePath, (error, content) => {
-      if (error) {
-        if (error.code == 'ENOENT') {
-          console.log(`${filePath} not found!`);
-          fs.readFile('./404.html', function (error, content) {
-            response.writeHead(200, { 'Content-Type': contentType });
-            response.end(content, 'utf-8');
-          });
-        } else {
-          response.writeHead(500);
-          response.end(
-            'Sorry, check with the site admin for error: ' +
-              error.code +
-              ' ..\n'
-          );
-          response.end();
-        }
-      } else {
-        response.writeHead(200, { 'Content-Type': contentType });
-        response.end(content, 'utf-8');
-      }
-    });
-  })
-  .listen(8125);
-console.log('Server running at http://127.0.0.1:8125/');
+  res.sendFile('/pages/index.html', OPTIONS, (error) => {
+    if (error) next(error);
+  });
+});
+
+// About page
+app.get('/about', (req, res, next) => {
+  console.log('Request for About page started!');
+
+  res.sendFile('/pages/about.html', OPTIONS, (error) => {
+    if (error) next(error);
+  });
+});
+
+// Contact page
+app.get('/contact-me', (req, res, next) => {
+  console.log('Request for Contacts page started!');
+
+  res.sendFile('/pages/contact-me.html', OPTIONS, (error) => {
+    if (error) next(error);
+  });
+});
+
+// Error handler
+app.get('*', (req, res, next) => {
+  console.log('Request for 404 page started!');
+
+  res.sendFile('/pages/404.html', OPTIONS, (error) => {
+    if (error) next(error);
+  });
+});
+
+// Starting code
+app.listen(3000, () => {
+  console.log('Server running at http://localhost:3000');
+});

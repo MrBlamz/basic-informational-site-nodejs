@@ -1,60 +1,52 @@
 "use strict";
 exports.__esModule = true;
-var http = require("http");
-var fs = require("fs");
+var express = require("express");
 var path = require("path");
-http
-    .createServer(function (request, response) {
-    console.log('request starting...');
-    var filePath = '.' + request.url;
-    // Home page
-    if (filePath == './')
-        filePath = './index.html';
-    console.log("Requesting file: ".concat(filePath));
-    var extname = path.extname(filePath);
-    var contentType = 'text/html';
-    switch (extname) {
-        case '.js':
-            contentType = 'text/javascript';
-            break;
-        case '.css':
-            contentType = 'text/css';
-            break;
-        case '.json':
-            contentType = 'application/json';
-            break;
-        case '.png':
-            contentType = 'image/png';
-            break;
-        case '.jpg':
-            contentType = 'image/jpg';
-            break;
-        case '.wav':
-            contentType = 'audio/wav';
-            break;
+var app = express();
+// Middleware
+app.use('/public', express.static(path.join(__dirname, 'public')));
+// File options
+var OPTIONS = {
+    root: path.join(__dirname, 'public'),
+    dotfiles: 'deny',
+    headers: {
+        'x-timestamp': Date.now(),
+        'x-sent': true
     }
-    fs.readFile(filePath, function (error, content) {
-        if (error) {
-            if (error.code == 'ENOENT') {
-                console.log("".concat(filePath, " not found!"));
-                fs.readFile('./404.html', function (error, content) {
-                    response.writeHead(200, { 'Content-Type': contentType });
-                    response.end(content, 'utf-8');
-                });
-            }
-            else {
-                response.writeHead(500);
-                response.end('Sorry, check with the site admin for error: ' +
-                    error.code +
-                    ' ..\n');
-                response.end();
-            }
-        }
-        else {
-            response.writeHead(200, { 'Content-Type': contentType });
-            response.end(content, 'utf-8');
-        }
+};
+// Home page
+app.get('/', function (req, res, next) {
+    console.log('Request for Home page started!');
+    res.sendFile('/pages/index.html', OPTIONS, function (error) {
+        if (error)
+            next(error);
     });
-})
-    .listen(8125);
-console.log('Server running at http://127.0.0.1:8125/');
+});
+// About page
+app.get('/about', function (req, res, next) {
+    console.log('Request for About page started!');
+    res.sendFile('/pages/about.html', OPTIONS, function (error) {
+        if (error)
+            next(error);
+    });
+});
+// Contact page
+app.get('/contact-me', function (req, res, next) {
+    console.log('Request for Contacts page started!');
+    res.sendFile('/pages/contact-me.html', OPTIONS, function (error) {
+        if (error)
+            next(error);
+    });
+});
+// Error handler
+app.get('*', function (req, res, next) {
+    console.log('Request for 404 page started!');
+    res.sendFile('/pages/404.html', OPTIONS, function (error) {
+        if (error)
+            next(error);
+    });
+});
+// Starting code
+app.listen(3000, function () {
+    console.log('Server running at http://localhost:3000');
+});
